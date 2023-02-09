@@ -37,7 +37,7 @@ genprime(Bignum *num, Bignum *minus1, Bignum *prev, Bignum *e, int nbits)
 	uint64_t i;
 
 	for (i = 0; i < 3U * (nbits * nbits); i++) {
-		bignum_rnd(nbits / FIXNUM_BIT, num);
+		bignum_rndprime(nbits / FIXNUM_BIT, num);
 		bignum_subshort(num, 1, minus1);
 		bignum_div(minus1, e, &q, &r);
 		if (bignum_cmp(prev, num) == 0)

@@ -102,13 +102,13 @@ void bignum_div(Bignum *a, Bignum *b, Bignum *q, Bignum *r);
 void bignum_divshort(Bignum *num, Fixnum div, Bignum *quo, Bignum *rem);
 
 /*
- * Set (*res) to a random value of n * 32 bits.
- * 
+ * Set (*res) to a random prime candidate value of n * 32 bits.
+ *
  * The function rand must return a random 32-bit value.
- * The most significant bit of the result is always 1;
- * so the number is at least 2^31.
+ * The most significant bit of the result is always 1.
+ * (*res) is always odd.
  */
-void bignum_rnd(int n, Bignum *res);
+void bignum_rndprime(int n, Bignum *res);
 
 /*
  * Apply Miller-Rabin primality test.

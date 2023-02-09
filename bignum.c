@@ -930,7 +930,7 @@ bignum_powermod(Bignum *b, Bignum *e, Bignum *mod, Bignum *res)
 }
 
 void
-bignum_rnd(int n, Bignum *res)
+bignum_rndprime(int n, Bignum *res)
 {
 	int i;
 
@@ -938,6 +938,7 @@ bignum_rnd(int n, Bignum *res)
 		res->data[i] = arc4random();
 	res->size = i;
 	res->data[res->size - 1] |= 0x80000000;
+	res->data[0] |= 0x00000001;
 }
 
 void
