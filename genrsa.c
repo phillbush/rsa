@@ -31,7 +31,7 @@ usage(void)
 }
 
 static int
-genprime(Bignum *num, Bignum *minus1, Bignum *e, int nbits)
+genprime(Bignum *num, Bignum *minus1, Bignum *prev, Bignum *e, int nbits)
 {
 	Bignum q, r;
 	uint64_t i;
@@ -40,6 +40,8 @@ genprime(Bignum *num, Bignum *minus1, Bignum *e, int nbits)
 		bignum_rnd(nbits / FIXNUM_BIT, num);
 		bignum_subshort(num, 1, minus1);
 		bignum_div(minus1, e, &q, &r);
+		if (bignum_cmp(prev, num) == 0)
+			continue;
 		if (bignum_iszero(&r))
 			continue;
 		if (bignum_isprime(num)) {
@@ -69,9 +71,10 @@ genkey(int nbits)
 
 	bignum_set(DEF_VERS, &vers);
 	bignum_set(DEF_EVAL, &e);
-	if (genprime(&p, &p1, &e, nbits) == -1)
+	bignum_set(0, &p);
+	if (genprime(&p, &p1, &e, &e, nbits) == -1)
 		goto error;
-	if (genprime(&q, &q1, &e, nbits) == -1)
+	if (genprime(&q, &q1, &p, &e, nbits) == -1)
 		goto error;
 	bignum_mul(&p, &q, &n);
 	bignum_mul(&p1, &q1, &f);
