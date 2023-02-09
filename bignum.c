@@ -987,7 +987,7 @@ bignum_isprime(Bignum *num)
 
 	/* get r and u */
 	r = 0;
-	bignum_subshort(num, 2, &lmt);
+	bignum_subshort(num, 4, &lmt);
 	bignum_subshort(num, 1, &buf);
 	bignum_subshort(num, 1, &u);
 	while (u.data[0] % 2 == 0) {
@@ -998,7 +998,7 @@ bignum_isprime(Bignum *num)
 	for (i = 0; i < ACCURACY; i++) {
 		/* get random a */
 		bignum_rndlimit(&lmt, &a);
-		bignum_addshort(&a, 1, &a);
+		bignum_addshort(&a, 2, &a);
 		bignum_powermod(&a, &u, num, &a);
 		if (a.size == 1 && a.data[0] == 1)
 			return 1;
@@ -1118,6 +1118,12 @@ bignum_siz(Bignum *num)
 	for (d = num->data[num->size - 1]; d != 0; d >>= CHAR_BIT)
 		n++;
 	return n > 0 ? n : 1;
+}
+
+int
+bignum_iszero(Bignum *num)
+{
+	return num->size == 0;
 }
 
 int

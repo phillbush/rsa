@@ -137,6 +137,11 @@ void bignum_invermod(Bignum *a, Bignum *m, Bignum *res);
  */
 size_t bignum_siz(Bignum *num);
 
+/*
+ * Is zero?
+ */
+int bignum_iszero(Bignum *num);
+
 void bignum_print(FILE *fp, Bignum *num);
 
 int bignum_write(Bignum *num, unsigned char *buf, size_t bufsize);
