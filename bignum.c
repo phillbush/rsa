@@ -1112,12 +1112,14 @@ size_t
 bignum_siz(Bignum *num)
 {
 	Fixnum d;
-	int n;
+	int n, p;
 
 	n = (num->size - 1) * FIXNUM_SIZE;
+	d = (num->data[num->size - 1] >> (CHAR_BIT * 3)) & 0xFF;
+	p = d & 0x80 ? 1 : 0;
 	for (d = num->data[num->size - 1]; d != 0; d >>= CHAR_BIT)
 		n++;
-	return n > 0 ? n : 1;
+	return (n > 0 ? n : 1) + p;
 }
 
 int
@@ -1138,6 +1140,9 @@ bignum_write(Bignum *num, unsigned char *buf, size_t bufsize)
 	i = 0;
 	for (n = num->data[num->size - 1]; n > 0; n >>= CHAR_BIT)
 		i++;
+	u = (num->data[num->size - 1] >> (CHAR_BIT * 3)) & 0xFF;
+	if (u & 0x80)
+		*(buf++) = 0x00;
 	for (j = i - 1; j >= 0; j--) {
 		u = (num->data[num->size - 1] >> (CHAR_BIT * j)) & 0xFF;
 		*(buf++) = u;
