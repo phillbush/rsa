@@ -81,6 +81,7 @@ Check the structure of a 128-bit private key (requires OpenSSL):
 # SEE ALSO
 
 openssl(1)
+
 The following books were used during the development of these utilities:
 
 Jonathan Katz,
