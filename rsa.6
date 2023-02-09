@@ -1,0 +1,111 @@
+.Dd February 9, 2023
+.Dt RSA 6
+.Os
+.Sh NAME
+.Nm genrsa ,
+.Nm pubout ,
+.Nm encrypt ,
+.Nm decrypt
+.Nd RSA utilities
+.Sh SYNOPSIS
+.Nm keygen
+.Op Ar nbits
+.Nm pubout
+.Nm encrypt key
+.Nm decrypt key
+.Sh DESCRIPTION
+The
+.Nm genrsa
+utility generates an RSA private key,
+which essentially involves the generation of two prime numbers.
+The generated private key, along with other information,
+is written into the standard output and encoded into PEM + ASN.1 format,
+containing the following data:
+.Bl -bullet
+.It
+The version (hardcoded to
+.Qq "0" ) .
+.It
+The composite modulus, N.
+.It
+The public value, e.
+.It
+The private value, d.
+.It
+The private value, d.
+.It
+The first prime factor of N, p.
+.It
+The second prime factor of N, p.
+.It
+The first exponent, d % (p - 1).
+.It
+The second exponent, d % (q - 1).
+.It
+The coefficient, q^-1 mod p.
+.El
+.Pp
+The
+.Nm pubout
+utility
+is TODO.
+.Pp
+The
+.Nm encrypt
+utility
+is TODO.
+.Pp
+The
+.Nm decrypt
+utility
+is TODO.
+.Sh EXIT STATUS
+.Ex
+.Sh EXAMPLES
+Generate a 128-bit private key into
+.Pa "key"
+and extract the public key into
+.Pa "key.pub" :
+.Bd -literal -offset indent
+$ genrsa 128 | tee key | pubout >key.pub
+.Ed
+.Pp
+Check the structure of a 128-bit private key (requires OpenSSL):
+.Bd -literal -offset indent
+$ genrsa 128 | openssl asn1parse
+.Ed
+.Sh SEE ALSO
+.Xr openssl 1
+The following books were used during the development of these utilities:
+.Rs
+.%A Jonathan Katz
+.%A Yehuda Lindell
+.%B "Introduction to Modern Cryptography"
+.%I CRC Press
+.%D 2021
+.Re
+.Rs
+.%A Donald E. Knuth
+.%B The Art of Computer Programming
+.%V 2
+.%I Addison Wesley Longman
+.%D 1998
+.Re
+.Sh HISTORY
+The
+.Nm genrsa ,
+.Nm pubout ,
+.Nm encrypt ,
+.Nm decrypt
+RSA
+utilities are the product of a project for 2022 2nd semester's course
+of Cyber Security of the Computer Science department
+of the University of Brasilia, Brazil.
+.Sh BUGS
+The
+.Ic "bignum.o"
+module was written from scratch and is probably buggy;
+i should have used an already existant arbitrary-precision arithmetic library.
+.Pp
+Generating keys can take long time,
+especially for 256 bits or more.
