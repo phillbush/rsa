@@ -6,8 +6,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/gmon.h>
-
 #ifdef __linux__
 #include <bsd/stdlib.h>
 #endif
@@ -54,18 +52,6 @@ genprime(Bignum *num, Bignum *minus1, Bignum *prev, Bignum *e, int nbits)
 static void
 genkey(int nbits)
 {
-	enum {
-		ASN1_VERS,
-		ASN1_N,
-		ASN1_E,
-		ASN1_D,
-		ASN1_P,
-		ASN1_Q,
-		ASN1_DP,
-		ASN1_DQ,
-		ASN1_Q1,
-		ASN1_LAST,
-	};
 	Bignum vers, p, q, p1, q1, n, e, d, f;
 	Bignum *nums[ASN1_LAST];
 
@@ -91,10 +77,12 @@ genkey(int nbits)
 	nums[ASN1_DP]   = &p1;          /* d % (p-1) */
 	nums[ASN1_DQ]   = &q1;          /* d % (q-1) */
 	nums[ASN1_Q1]   = &f;           /* q^-1 mod p */
+	fprintf(stdout, "-----BEGIN RSA PRIVATE KEY-----\n");
 	keywrite(stdout, nums, ASN1_LAST);
+	fprintf(stdout, "-----END RSA PRIVATE KEY-----\n");
 	return;
 error:
-	errx(1, "could not generate key pair");
+	errx(EXIT_FAILURE, "could not generate key pair");
 }
 
 int

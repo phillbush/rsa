@@ -4,13 +4,19 @@
 .Sh NAME
 .Nm genrsa ,
 .Nm pubout ,
+.Nm asn1parse ,
 .Nm encrypt ,
 .Nm decrypt
 .Nd RSA utilities
 .Sh SYNOPSIS
-.Nm keygen
+.Nm genrsa
 .Op Ar nbits
+.Op Ar >rsa.key
 .Nm pubout
+.Op Ar <rsa.key
+.Op Ar >rsa.pub
+.Nm asn1parse
+.Op Ar <key
 .Nm encrypt key
 .Nm decrypt key
 .Sh DESCRIPTION
@@ -47,8 +53,17 @@ The coefficient, q^-1 mod p.
 .Pp
 The
 .Nm pubout
-utility
-is TODO.
+utility extracts the public key (N and e) out of the private key.
+The extracted public key is written into standard output.
+The private key is read from standard input.
+.Pp
+The
+.Nm asn1parse
+utility parses a private or public key created with the
+.Nm genrsa
+or
+.Nm pubout
+utilities.
 .Pp
 The
 .Nm encrypt
@@ -59,20 +74,18 @@ The
 .Nm decrypt
 utility
 is TODO.
-.Sh EXIT STATUS
-.Ex
 .Sh EXAMPLES
 Generate a 128-bit private key into
 .Pa "key"
 and extract the public key into
 .Pa "key.pub" :
 .Bd -literal -offset indent
-$ genrsa 128 | tee key | pubout >key.pub
+$ genrsa 128 | tee rsa.key | pubout >rsa.pub
 .Ed
 .Pp
-Check the structure of a 128-bit private key (requires OpenSSL):
+Check the structure of a 128-bit private key:
 .Bd -literal -offset indent
-$ genrsa 128 | openssl asn1parse
+$ genrsa 128 | asn1parse
 .Ed
 .Sh SEE ALSO
 .Xr openssl 1
@@ -93,13 +106,7 @@ The following books were used during the development of these utilities:
 .%D 1998
 .Re
 .Sh HISTORY
-The
-.Nm genrsa ,
-.Nm pubout ,
-.Nm encrypt ,
-.Nm decrypt
-RSA
-utilities are the product of a project for 2022 2nd semester's course
+These RSA utilities are the product of a project for 2022 2nd semester's course
 of Cyber Security of the Computer Science department
 of the University of Brasilia, Brazil.
 .Sh BUGS
@@ -109,4 +116,4 @@ module was written from scratch and is probably buggy;
 i should have used an already existant arbitrary-precision arithmetic library.
 .Pp
 Generating keys can take long time,
-especially for 256 bits or more.
+especially for 1024 bits or more.

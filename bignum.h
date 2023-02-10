@@ -105,7 +105,7 @@ void bignum_divshort(Bignum *num, Fixnum div, Bignum *quo, Bignum *rem);
  * Set (*res) to a random prime candidate value of n * 32 bits.
  *
  * The function rand must return a random 32-bit value.
- * The most significant bit of the result is always 1.
+ * The 2 most significant bits of the result are always 1.
  * (*res) is always odd.
  */
 void bignum_rndprime(int n, Bignum *res);
@@ -129,6 +129,8 @@ void bignum_powermod(Bignum *b, Bignum *e, Bignum *m, Bignum *res);
 
 /*
  * Compute modular multiplicative inverse; (*a)(*res) congr 1 mod (*m)
+ *
+ * It assumes (*a) and (*b) to be coprimes.
  */
 void bignum_invermod(Bignum *a, Bignum *m, Bignum *res);
 
@@ -142,6 +144,14 @@ size_t bignum_siz(Bignum *num);
  */
 int bignum_iszero(Bignum *num);
 
-void bignum_print(FILE *fp, Bignum *num);
-
+/*
+ * Write the bytes from (*num) into buf of size bufsize.
+ */
 int bignum_write(Bignum *num, unsigned char *buf, size_t bufsize);
+
+/*
+ * Read the bytes from buf of bufsize into (*num).
+ */
+void bignum_read(Bignum *num, unsigned char *buf, size_t bufsize);
+
+void bignum_print(FILE *fp, Bignum *num);

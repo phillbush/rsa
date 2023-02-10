@@ -794,6 +794,12 @@ bignum_divlong(Bignum *num, Bignum *div, Bignum *quo, Bignum *rem)
 	 * [Page 272 on my edition].
 	 */
 
+	if (bignum_cmp(num, div) < 0) {
+		bignum_set(0, quo);
+		bignum_cpy(num, rem);
+		return;
+	}
+
 	/* normalize */
 	shift = 0;
 	tmp = div->data[div->size - 1];
@@ -937,7 +943,7 @@ bignum_rndprime(int n, Bignum *res)
 	for (i = 0; i < n && i < BIGNUM_MAXSIZE; i++)
 		res->data[i] = arc4random();
 	res->size = i;
-	res->data[res->size - 1] |= 0x80000000;
+	res->data[res->size - 1] |= 0xC0000000;
 	res->data[0] |= 0x00000001;
 }
 
@@ -1071,16 +1077,20 @@ bignum_invermod(Bignum *a, Bignum *m, Bignum *res)
 	bignum_set(1, &tn);
 	bignum_cpy(m, &r);
 	bignum_cpy(a, &rn);
-	while (rn.size > 0) {
+	while (!bignum_iszero(&rn)) {
 		bignum_div(&r, &rn, &quo, &rem);
-		if (bignum_cmp(&r, &rem) == 0)
-			bignum_set(0, &rem);
 		bignum_cpy(&rn, &r);
 		bignum_cpy(&rem, &rn);
 		bignum_cpy(&tn, &tmp);
 		bignum_mul(&tn, &quo, &tn);
-		while (bignum_cmp(&t, &tn) < 0)
-			bignum_add(&t, m, &t);
+		if (bignum_cmp(&t, &tn) < 0) {
+			bignum_sub(&tn, &t, &rem);
+			bignum_div(&rem, m, &quo, &rem);
+			if (!bignum_iszero(&rem))
+				bignum_addshort(&quo, 1, &quo);
+			bignum_mul(m, &quo, &quo);
+			bignum_add(&t, &quo, &t);
+		}
 		bignum_sub(&t, &tn, &tn);
 		bignum_cpy(&tmp, &t);
 	}
@@ -1155,4 +1165,24 @@ bignum_write(Bignum *num, unsigned char *buf, size_t bufsize)
 		}
 	}
 	return 0;
+}
+
+void
+bignum_read(Bignum *num, unsigned char *buf, size_t bufsize)
+{
+	size_t j, i;
+	uint8_t u;
+
+	num->size = 0;
+	for (i = 0; i < bufsize; i++) {
+		if (i % FIXNUM_SIZE == 0)
+			num->data[i / FIXNUM_SIZE] = 0;
+		u = buf[bufsize - i - 1];
+		j = i / FIXNUM_SIZE;
+		num->data[j] <<= CHAR_BIT;
+		num->data[j] |= u;
+		if (num->data[j] > 0) {
+			num->size = j + 1;
+		}
+	}
 }
