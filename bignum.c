@@ -553,6 +553,8 @@ bignum_cpy(Bignum *src, Bignum *dst)
 {
 	int i;
 
+	if (src == dst)
+		return;
 	for (i = 0; i < src->size; i++)
 		dst->data[i] = src->data[i];
 	dst->size = src->size;
@@ -936,13 +938,34 @@ bignum_powermod(Bignum *b, Bignum *e, Bignum *mod, Bignum *res)
 }
 
 void
-bignum_rndprime(int n, Bignum *res)
+bignum_rnd(int n, Bignum *res)
 {
+	Fixnum mask;
 	int i;
 
+	n /= FIXNUM_SIZE;
+	res->size = 0;
+	if (n == 0)
+		return;
 	for (i = 0; i < n && i < BIGNUM_MAXSIZE; i++)
 		res->data[i] = arc4random();
 	res->size = i;
+	n %= FIXNUM_SIZE;
+	mask = FIXNUM_MAX;
+	if (n > 0) {
+		mask = 0xFF;
+		for (; n > 0; n--) {
+			mask <<= CHAR_BIT;
+			mask |= 0xFF;
+		}
+	}
+	res->data[res->size - 1] &= mask;
+}
+
+void
+bignum_rndprime(int n, Bignum *res)
+{
+	bignum_rnd(n, res);
 	res->data[res->size - 1] |= 0xC0000000;
 	res->data[0] |= 0x00000001;
 }
@@ -1109,6 +1132,8 @@ bignum_print(FILE *fp, Bignum *num)
 		bignum_divshort(&q, 1000000000, &q, &r);
 		d.data[n++] = r.data[0];
 	}
+	if (n == 0)
+		fprintf(fp, "0");
 	for (i = n - 1; i >= 0; i--) {
 		if (i == n - 1) {
 			fprintf(fp, "%u", d.data[i]);
@@ -1119,18 +1144,25 @@ bignum_print(FILE *fp, Bignum *num)
 	fprintf(fp, "\n");
 }
 
-size_t
-bignum_siz(Bignum *num)
+void
+bignum_binprint(FILE *fp, Bignum *num)
 {
-	Fixnum d;
-	int n, p;
+	Fixnum n;
+	uint8_t u[FIXNUM_SIZE];
+	int i, j;
 
-	n = (num->size - 1) * FIXNUM_SIZE;
-	d = (num->data[num->size - 1] >> (CHAR_BIT * 3)) & 0xFF;
-	p = d & 0x80 ? 1 : 0;
-	for (d = num->data[num->size - 1]; d != 0; d >>= CHAR_BIT)
-		n++;
-	return (n > 0 ? n : 1) + p;
+	for (i = num->size - 1; i >= 0; i--) {
+		n = num->data[i];
+		for (j = (int)FIXNUM_SIZE - 1; j >= 0; j--) {
+			u[j] = n & 0xFF;
+			n >>= CHAR_BIT;
+		}
+		for (j = 0; j < (int)FIXNUM_SIZE; j++) {
+			if (i < num->size - 1 || u[j] > 0) {
+				fwrite(&u[j], 1, 1, fp);
+			}
+		}
+	}
 }
 
 int
@@ -1144,45 +1176,54 @@ bignum_write(Bignum *num, unsigned char *buf, size_t bufsize)
 {
 	Fixnum n;
 	int i, j;
-	uint8_t u;
 
-	if (bufsize < bignum_siz(num))
+	if (bufsize < bignum_size(num))
 		return -1;
 	i = 0;
 	for (n = num->data[num->size - 1]; n > 0; n >>= CHAR_BIT)
 		i++;
-	u = (num->data[num->size - 1] >> (CHAR_BIT * 3)) & 0xFF;
-	if (u & 0x80)
-		*(buf++) = 0x00;
-	for (j = i - 1; j >= 0; j--) {
-		u = (num->data[num->size - 1] >> (CHAR_BIT * j)) & 0xFF;
-		*(buf++) = u;
-	}
-	for (i = num->size - 2; i >= 0; i--) {
-		for (j = 3; j >= 0; j--) {
-			u = (num->data[i] >> (CHAR_BIT * j)) & 0xFF;
+	for (j = i - 1; j >= 0; j--)
+		*(buf++) = (num->data[num->size - 1] >> (CHAR_BIT * j)) & 0xFF;
+	for (i = num->size - 2; i >= 0; i--)
+		for (j = 3; j >= 0; j--)
 			*(buf++) = (num->data[i] >> (CHAR_BIT * j)) & 0xFF;
-		}
-	}
 	return 0;
 }
 
 void
-bignum_read(Bignum *num, unsigned char *buf, size_t bufsize)
+bignum_read(Bignum *num, uint8_t *buf, size_t bufsize)
 {
-	size_t j, i;
-	uint8_t u;
+	size_t i, k;
+	int j;
 
 	num->size = 0;
-	for (i = 0; i < bufsize; i++) {
-		if (i % FIXNUM_SIZE == 0)
-			num->data[i / FIXNUM_SIZE] = 0;
-		u = buf[bufsize - i - 1];
-		j = i / FIXNUM_SIZE;
-		num->data[j] <<= CHAR_BIT;
-		num->data[j] |= u;
-		if (num->data[j] > 0) {
-			num->size = j + 1;
+	for (i = 0; i < bufsize && buf[i] == 0x00; i++)
+		;
+	bufsize -= i;
+	buf += i;
+	num->size = bufsize / FIXNUM_SIZE;
+	if (bufsize % FIXNUM_SIZE != 0)
+		num->size++;
+	i = 0;
+	for (j = num->size - 1; j >= 0; j--) {
+		num->data[j] = 0;
+		for (k = 0; k < FIXNUM_SIZE && i < bufsize; k++, i++) {
+			num->data[j] <<= CHAR_BIT;
+			num->data[j] |= buf[i];
 		}
 	}
+}
+
+size_t
+bignum_size(Bignum *num)
+{
+	Fixnum d;
+	size_t n;
+
+	if (num->size == 0)
+		return 0;
+	n = (num->size - 1) * FIXNUM_SIZE;
+	for (d = num->data[num->size - 1]; d > 0; d >>= CHAR_BIT)
+		n++;
+	return n;
 }

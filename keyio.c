@@ -57,19 +57,21 @@ nbytes(size_t m)
 }
 
 int
-keywrite(FILE *fp, Bignum *nums[], size_t nnums)
+keywrite(FILE *fp, Bignum *nums[], int nnums)
 {
-	size_t bufsize, size, plsize, i;
 	uint32_t u;
-	int ret = 0;
-	int n;
+	int bufsize, size, plsize, n, i, ret;
 	uint8_t *buf = NULL;
 	uint8_t *p;
+
+	ret = 0;
 
 	/* compute buffer size; and allocate buffer */
 	bufsize = 0;
 	for (i = 0; i < nnums; i++) {
-		size = bignum_siz(nums[i]);
+		size = bignum_size(nums[i]);
+		if (size == 0)
+			size = 1;
 		bufsize++;                      /* for the integer header */
 		bufsize += nbytes(nbytes(size));/* for the integer size size */
 		bufsize += nbytes(size);        /* for the integer payload size */
@@ -93,7 +95,14 @@ keywrite(FILE *fp, Bignum *nums[], size_t nnums)
 	while (n > 0)                           /* sequence payload size */
 		*(p++) = plsize >> ((--n) * CHAR_BIT);
 	for (i = 0; i < nnums; i++) {
-		size = bignum_siz(nums[i]);
+		if ((size = bignum_size(nums[i])) == 0) {
+			/* hack for zero-sized numbers */
+			*(p++) = INTEGER;
+			*(p++) = 0x81;
+			*(p++) = 0x01;
+			*(p++) = 0x00;
+			continue;
+		}
 		n = nbytes(size);
 		*(p++) = INTEGER;               /* integer type */
 		*(p++) = n | 0x80;              /* integer size size */
@@ -260,13 +269,14 @@ getsize(struct Parse *parse, size_t *size)
 	return 0;
 }
 
-int
-keyparse(FILE *fp, Bignum *nums[], size_t nnums, char **errstr)
+static int
+keyparse(FILE *fp, Bignum *nums[], int nnums, char **errstr)
 {
 	Bignum num;
 	struct Parse parse;
+	size_t i, intsize, bufsize;
 	uint8_t *buf = NULL;
-	size_t nreadnums, i, intsize, bufsize;
+	int nreadnums;
 
 	parse = (struct Parse){
 		.fp = fp,
@@ -310,11 +320,11 @@ keyparse(FILE *fp, Bignum *nums[], size_t nnums, char **errstr)
 	}
 	if (getcomment(&parse) == -1)
 		return -1;
-	return 0;
+	return nreadnums;
 }
 
 int
-keyread(FILE *fp, Bignum *nums[], size_t nnums, char **errstr)
+keyread(FILE *fp, Bignum *nums[], int nnums, char **errstr)
 {
 	if (nums == NULL || nnums == 0) {
 		*errstr = ERROR_TOOMANYINT;

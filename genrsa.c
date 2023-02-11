@@ -16,7 +16,7 @@
 #define DEF_VERS        0x00
 #define DEF_BITS        1024
 #define MIN_BITS        64
-#define MAX_BITS        16384
+#define MAX_BITS        4096
 #define DIG_SIZE        64
 #define SDIG_BITS       "32"
 #define DEF_EVAL        0x10001
@@ -35,7 +35,7 @@ genprime(Bignum *num, Bignum *minus1, Bignum *prev, Bignum *e, int nbits)
 	uint64_t i;
 
 	for (i = 0; i < 3U * (nbits * nbits); i++) {
-		bignum_rndprime(nbits / FIXNUM_BIT, num);
+		bignum_rndprime(nbits / CHAR_BIT, num);
 		bignum_subshort(num, 1, minus1);
 		bignum_div(minus1, e, &q, &r);
 		if (bignum_cmp(prev, num) == 0)
@@ -60,14 +60,20 @@ genkey(int nbits)
 	bignum_set(0, &p);
 	if (genprime(&p, &p1, &e, &e, nbits) == -1)
 		goto error;
+	fprintf(stderr, ".");
+	fflush(stderr);
 	if (genprime(&q, &q1, &p, &e, nbits) == -1)
 		goto error;
+	fprintf(stderr, ".");
+	fflush(stderr);
 	bignum_mul(&p, &q, &n);
 	bignum_mul(&p1, &q1, &f);
 	bignum_invermod(&e, &f, &d);
 	bignum_div(&d, &p1, &f, &p1);
 	bignum_div(&d, &q1, &f, &q1);
 	bignum_invermod(&q, &p, &f);
+	fprintf(stderr, ".\n");
+	fflush(stderr);
 	nums[ASN1_VERS] = &vers;        /* version */
 	nums[ASN1_N]    = &n;           /* n = q * p */
 	nums[ASN1_E]    = &e;           /* e = DEF_EVAL */

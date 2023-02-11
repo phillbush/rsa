@@ -11,6 +11,6 @@ enum {
 	ASN1_LAST,
 };
 
-int keywrite(FILE *fp, Bignum *nums[], size_t nnums);
-int keyread(FILE *fp, Bignum *nums[], size_t nnums, char **errstr);
+int keywrite(FILE *fp, Bignum *nums[], int nnums);
 int keyprint(FILE *fp, char **errstr);
+int keyread(FILE *fp, Bignum *nums[], int nnums, char **errstr);

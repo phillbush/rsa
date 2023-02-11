@@ -1,39 +1,32 @@
 RSA(6)                           Games Manual                           RSA(6)
 
 NAME
-     genrsa, pubout, asn1parse, encrypt, decrypt - RSA utilities
+     genrsa, pubout, asn1parse, cksum, sign, verify - RSA utilities
 
 SYNOPSIS
-     genrsa [nbits] [>rsa.key]
-     pubout [<rsa.key] [>rsa.pub]
-     asn1parse [<key]
-     encrypt key
-     decrypt key
+     genrsa [nbits] >rsa.key
+     pubout <rsa.key >rsa.pub
+     asn1parse <key
+
+     cksum <file >digest
+
+     sign key file >sigfile
+     verify key file <sigfile
 
 DESCRIPTION
      The genrsa utility generates an RSA private key, which essentially
      involves the generation of two prime numbers.  The generated private key,
      along with other information, is written into the standard output and
      encoded into PEM + ASN.1 format, containing the following data:
-
      o   The version (hardcoded to "0").
-
      o   The composite modulus, N.
-
      o   The public value, e.
-
      o   The private value, d.
-
      o   The private value, d.
-
      o   The first prime factor of N, p.
-
      o   The second prime factor of N, p.
-
      o   The first exponent, d % (p - 1).
-
      o   The second exponent, d % (q - 1).
-
      o   The coefficient, q^-1 mod p.
 
      The pubout utility extracts the public key (N and e) out of the private
@@ -43,19 +36,40 @@ DESCRIPTION
      The asn1parse utility parses a private or public key created with the
      genrsa or pubout utilities.
 
-     The encrypt utility is TODO.
+     The cksum utility hashes the contents read from standard input into a
+     digest using the SHA256 algorithm for cryptographic hash function.  The
+     processed digest is written into standard output.
 
-     The decrypt utility is TODO.
+     The sign utility signs the file file using the key key into a signature,
+     which consists of the RSA+OAEP encryption of the SHA256 hash of the
+     contents of the given file.  The signature is written into standard
+     output.
+
+     The verify utility verifies the authenticity of file by verifying its
+     signature with the given key. The verification is done by comparing
+     whether the SHA256 hash of the contents of the given file is equal to the
+     RSA+OAEP decryption of the given signature.  The signature is read from
+     standard input.
 
 EXAMPLES
-     Generate a 128-bit private key into key and extract the public key into
+     Generate a 1024-bit private key into key and extract the public key into
      key.pub:
 
-           $ genrsa 128 | tee rsa.key | pubout >rsa.pub
+           $ genrsa 1024 | tee rsa1024.key | pubout >rsa1024.pub
 
-     Check the structure of a 128-bit private key:
+     Check the structure of a previously-generated 1024-bit private key:
 
-           $ genrsa 128 | asn1parse
+           $ asn1parse <rsa1024.key
+
+     Create a signature for a given file using a previously-generated 1024-bit
+     private key:
+
+           $ sign rsa1024.key archive.zip > archive.sig
+
+     Verify the signature of a given file using a previously-generated
+     1024-bit private key:
+
+           $ verify rsa1024.key archive.zip < archive.sig
 
 SEE ALSO
      openssl(1)
@@ -67,6 +81,22 @@ SEE ALSO
 
      Donald E. Knuth, The Art of Computer Programming, Addison Wesley Longman,
      2, 1998.
+
+IMPLEMENTATION
+     RSA is a cipher scheme that uses an asymmetric key pair (one private, and
+     the other public) associated to a given bit length (at least 1024), and
+     generated after two random prime numbers (whose product has the given bit
+     length).  The security of RSA is based on the problem of factoring large
+     numbers.
+
+     Prime number generation is, perhaps, the slowest factor on the key
+     generation, for it consists of generating random numbers and checking for
+     their primality.  The primality test is performed using the Miller-Rabin
+     test.
+
+     The RSA cipher system, however, is deterministic and subject to Chosen-
+     Plaintext Attacks.  OAEP is a padding scheme used with RSA to add
+     randomness to RSA's deterministic encryption.
 
 HISTORY
      These RSA utilities are the product of a project for 2022 2nd semester's

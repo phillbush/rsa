@@ -102,7 +102,12 @@ void bignum_div(Bignum *a, Bignum *b, Bignum *q, Bignum *r);
 void bignum_divshort(Bignum *num, Fixnum div, Bignum *quo, Bignum *rem);
 
 /*
- * Set (*res) to a random prime candidate value of n * 32 bits.
+ * Set (*res) to a random value of n bytes.
+ */
+void bignum_rnd(int n, Bignum *res);
+
+/*
+ * Set (*res) to a random prime candidate value of n bytes.
  *
  * The function rand must return a random 32-bit value.
  * The 2 most significant bits of the result are always 1.
@@ -135,11 +140,6 @@ void bignum_powermod(Bignum *b, Bignum *e, Bignum *m, Bignum *res);
 void bignum_invermod(Bignum *a, Bignum *m, Bignum *res);
 
 /*
- * Return number of bytes of num.
- */
-size_t bignum_siz(Bignum *num);
-
-/*
  * Is zero?
  */
 int bignum_iszero(Bignum *num);
@@ -154,4 +154,10 @@ int bignum_write(Bignum *num, unsigned char *buf, size_t bufsize);
  */
 void bignum_read(Bignum *num, unsigned char *buf, size_t bufsize);
 
+/*
+ * return number of bytes in (*num)
+ */
+size_t bignum_size(Bignum *num);
+
 void bignum_print(FILE *fp, Bignum *num);
+void bignum_binprint(FILE *fp, Bignum *num);

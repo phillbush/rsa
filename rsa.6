@@ -5,20 +5,32 @@
 .Nm genrsa ,
 .Nm pubout ,
 .Nm asn1parse ,
-.Nm encrypt ,
-.Nm decrypt
+.Nm cksum ,
+.Nm sign ,
+.Nm verify
 .Nd RSA utilities
 .Sh SYNOPSIS
 .Nm genrsa
 .Op Ar nbits
-.Op Ar >rsa.key
+.Ar >rsa.key
 .Nm pubout
-.Op Ar <rsa.key
-.Op Ar >rsa.pub
+.Ar <rsa.key
+.Ar >rsa.pub
 .Nm asn1parse
-.Op Ar <key
-.Nm encrypt key
-.Nm decrypt key
+.Ar <key
+.Pp
+.Nm cksum
+.Ar <file
+.Ar >digest
+.Pp
+.Nm sign
+.Ar key
+.Ar file
+.Ar >sigfile
+.Nm verify
+.Ar key
+.Ar file
+.Ar <sigfile
 .Sh DESCRIPTION
 The
 .Nm genrsa
@@ -27,7 +39,7 @@ which essentially involves the generation of two prime numbers.
 The generated private key, along with other information,
 is written into the standard output and encoded into PEM + ASN.1 format,
 containing the following data:
-.Bl -bullet
+.Bl -bullet -compact
 .It
 The version (hardcoded to
 .Qq "0" ) .
@@ -66,26 +78,52 @@ or
 utilities.
 .Pp
 The
-.Nm encrypt
-utility
-is TODO.
+.Nm cksum
+utility hashes the contents read from standard input into a digest using the
+SHA256 algorithm for cryptographic hash function.
+The processed digest is written into standard output.
 .Pp
 The
-.Nm decrypt
-utility
-is TODO.
+.Nm sign
+utility signs the file
+.Ar file
+using the key
+.Ar key
+into a signature,
+which consists of the RSA+OAEP encryption of the SHA256 hash of the contents of the given file.
+The signature is written into standard output.
+.Pp
+The
+.Nm verify
+utility verifies the authenticity of
+.Ar file
+by verifying its signature with the given
+.Ar key.
+The verification is done by comparing whether the SHA256 hash of the contents of the given file
+is equal to the RSA+OAEP decryption of the given signature.
+The signature is read from standard input.
 .Sh EXAMPLES
-Generate a 128-bit private key into
+Generate a 1024-bit private key into
 .Pa "key"
 and extract the public key into
 .Pa "key.pub" :
 .Bd -literal -offset indent
-$ genrsa 128 | tee rsa.key | pubout >rsa.pub
+$ genrsa 1024 | tee rsa1024.key | pubout >rsa1024.pub
 .Ed
 .Pp
-Check the structure of a 128-bit private key:
+Check the structure of a previously-generated 1024-bit private key:
 .Bd -literal -offset indent
-$ genrsa 128 | asn1parse
+$ asn1parse <rsa1024.key
+.Ed
+.Pp
+Create a signature for a given file using a previously-generated 1024-bit private key:
+.Bd -literal -offset indent
+$ sign rsa1024.key archive.zip > archive.sig
+.Ed
+.Pp
+Verify the signature of a given file using a previously-generated 1024-bit private key:
+.Bd -literal -offset indent
+$ verify rsa1024.key archive.zip < archive.sig
 .Ed
 .Sh SEE ALSO
 .Xr openssl 1
@@ -105,6 +143,18 @@ The following books were used during the development of these utilities:
 .%I Addison Wesley Longman
 .%D 1998
 .Re
+.Sh IMPLEMENTATION
+RSA is a cipher scheme that uses an asymmetric key pair
+(one private, and the other public) associated to a given bit length (at least 1024),
+and generated after two random prime numbers (whose product has the given bit length).
+The security of RSA is based on the problem of factoring large numbers.
+.Pp
+Prime number generation is, perhaps, the slowest factor on the key generation,
+for it consists of generating random numbers and checking for their primality.
+The primality test is performed using the Miller-Rabin test.
+.Pp
+The RSA cipher system, however, is deterministic and subject to Chosen-Plaintext Attacks.
+OAEP is a padding scheme used with RSA to add randomness to RSA's deterministic encryption.
 .Sh HISTORY
 These RSA utilities are the product of a project for 2022 2nd semester's course
 of Cyber Security of the Computer Science department
