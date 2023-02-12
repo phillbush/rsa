@@ -155,6 +155,30 @@ The primality test is performed using the Miller-Rabin test.
 .Pp
 The RSA cipher system, however, is deterministic and subject to Chosen-Plaintext Attacks.
 OAEP is a padding scheme used with RSA to add randomness to RSA's deterministic encryption.
+.Pp
+The source code contains the following modules.
+Modules are written as a
+.Pa ".c"
+source file and an optional
+.Pa ".c"
+header file.
+The header file is present on shared modules;
+and absent on modules containing the program's entry point
+(the
+.Ic "main"
+function).
+.Pp
+The shared modules are as follows:
+.Bl -tag -width Ds -compact
+.It Pa "bignum"
+Routines and structures for arbitrary-precision arithmetic.
+.It Pa "keyio"
+Routines for key I/O in the PEM+ASN.1 format.
+.It Pa "oaep"
+Routines for verifying and signing files using OAEP padding.
+.It Pa "sha"
+Routines and constants for SHA256 cryptographic hashing.
+.El
 .Sh HISTORY
 These RSA utilities are the product of a project for 2022 2nd semester's course
 of Cyber Security of the Computer Science department

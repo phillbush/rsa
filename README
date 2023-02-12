@@ -98,6 +98,17 @@ IMPLEMENTATION
      Plaintext Attacks.  OAEP is a padding scheme used with RSA to add
      randomness to RSA's deterministic encryption.
 
+     The source code contains the following modules.  Modules are written as a
+     .c source file and an optional .c header file.  The header file is
+     present on shared modules; and absent on modules containing the program's
+     entry point (the main function).
+
+     The shared modules are as follows:
+     bignum  Routines and structures for arbitrary-precision arithmetic.
+     keyio   Routines for key I/O in the PEM+ASN.1 format.
+     oaep    Routines for verifying and signing files using OAEP padding.
+     sha     Routines and constants for SHA256 cryptographic hashing.
+
 HISTORY
      These RSA utilities are the product of a project for 2022 2nd semester's
      course of Cyber Security of the Computer Science department of the
