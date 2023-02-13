@@ -1145,6 +1145,28 @@ bignum_print(FILE *fp, Bignum *num)
 }
 
 void
+bignum_hexprint(FILE *fp, Bignum *num)
+{
+	Fixnum n;
+	uint8_t u[FIXNUM_SIZE];
+	int i, j;
+
+	for (i = num->size - 1; i >= 0; i--) {
+		n = num->data[i];
+		for (j = (int)FIXNUM_SIZE - 1; j >= 0; j--) {
+			u[j] = n & 0xFF;
+			n >>= CHAR_BIT;
+		}
+		for (j = 0; j < (int)FIXNUM_SIZE; j++) {
+			if (i < num->size - 1 || u[j] > 0) {
+				fprintf(fp, "%02X", u[j]);
+			}
+		}
+	}
+	fprintf(fp, "\n");
+}
+
+void
 bignum_binprint(FILE *fp, Bignum *num)
 {
 	Fixnum n;

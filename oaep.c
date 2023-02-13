@@ -14,6 +14,7 @@
 #include "keyio.h"
 
 #define DEF_RNDSIZE     (FIXNUM_SIZE * 3)
+#define SIGSIZE         (SHA256_DIGEST + 2 * DEF_RNDSIZE)
 #define MIN(a, b)       ((a) < (b) ? (a) : (b))
 
 static void
@@ -26,11 +27,11 @@ oaepencode(uint8_t *msg, size_t modsize, size_t msgsize)
 	/* msg is modsize bytes long, with the first msgsize byte filled */
 	padsize = modsize - DEF_RNDSIZE - msgsize;
 	headsize = msgsize + padsize;
-	memset(msg + msgsize, 0, padsize);      /* pad zeroes to message */
-	arc4random_buf(rnd, DEF_RNDSIZE);           /* write random bytes into tail */
+	memset(msg + msgsize, 0, padsize);
+	arc4random_buf(rnd, DEF_RNDSIZE);
 
 	/* hash(rnd) ^ msg */
-	shaparse(hash, rnd, DEF_RNDSIZE);       /* generate head as XOR of rnd and */
+	shaparse(hash, rnd, DEF_RNDSIZE);
 	minsize = MIN(headsize, SHA256_DIGEST);
 	for (i = 0; i < minsize; i++)
 		msg[i] = msg[i] ^ hash[i];
@@ -142,18 +143,17 @@ void
 sign(char *keyfile, char *origfile, FILE *foutp)
 {
 	Bignum mod, exp, sig;
-	size_t modsize;
+	size_t i;
 	uint8_t *msg;
 
 	parsekey(&mod, &exp, keyfile);
-	modsize = bignum_size(&mod);
-	if (modsize <= DEF_RNDSIZE + SHA256_DIGEST)
+	if (bignum_size(&mod) <= SIGSIZE)
 		errx(EXIT_FAILURE, "%s: key modulus too short", keyfile);
-	if ((msg = malloc(modsize)) == NULL)
+	if ((msg = malloc(SIGSIZE)) == NULL)
 		err(EXIT_FAILURE, "malloc");
 	hashfile(msg, origfile);
-	oaepencode(msg, modsize, SHA256_DIGEST);
-	bignum_read(&sig, msg, modsize);
+	oaepencode(msg, SIGSIZE, SHA256_DIGEST);
+	bignum_read(&sig, msg, SIGSIZE);
 	bignum_powermod(&sig, &exp, &mod, &sig);
 	bignum_binprint(foutp, &sig);
 	free(msg);
@@ -163,18 +163,17 @@ int
 verify(char *keyfile, char *origfile, FILE *finp)
 {
 	Bignum mod, exp, sig;
-	size_t modsize, sigsize, i;
+	size_t sigsize, i;
 	uint8_t hash[SHA256_DIGEST];
 	uint8_t *buf;
 
 	parsekey(&mod, &exp, keyfile);
-	modsize = bignum_size(&mod);
-	if (modsize <= DEF_RNDSIZE + SHA256_DIGEST)
+	if (bignum_size(&mod) <= SIGSIZE)
 		errx(EXIT_FAILURE, "%s: key modulus too short", keyfile);
 	getsig(finp, &sig);
 	bignum_powermod(&sig, &exp, &mod, &sig);
 	sigsize = bignum_size(&sig);
-	if (sigsize > modsize)
+	if (sigsize != SIGSIZE)
 		return 0;
 	if ((buf = malloc(sigsize)) == NULL)
 		err(EXIT_FAILURE, "malloc");

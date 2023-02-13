@@ -161,3 +161,4 @@ size_t bignum_size(Bignum *num);
 
 void bignum_print(FILE *fp, Bignum *num);
 void bignum_binprint(FILE *fp, Bignum *num);
+void bignum_hexprint(FILE *fp, Bignum *num);

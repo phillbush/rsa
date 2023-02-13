@@ -314,7 +314,7 @@ keyparse(FILE *fp, Bignum *nums[], int nnums, char **errstr)
 			bignum_read(nums[nreadnums++], buf, intsize);
 		} else {
 			bignum_read(&num, buf, intsize);
-			bignum_print(stdout, &num);
+			bignum_hexprint(stdout, &num);
 		}
 		free(buf);
 	}
